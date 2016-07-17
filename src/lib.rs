@@ -158,6 +158,18 @@ impl<'a, S> de::Visitor for Visitor<'a, S>
     {
         self.0.serialize_newtype_struct("<unknown>", &Transcoder::new(d)).map_err(s2d)
     }
+
+    fn visit_bytes<E>(&mut self, v: &[u8]) -> Result<(), E>
+        where E: de::Error
+    {
+        self.0.serialize_bytes(v).map_err(s2d)
+    }
+
+    fn visit_byte_buf<E>(&mut self, v: Vec<u8>) -> Result<(), E>
+        where E: de::Error
+    {
+        self.0.serialize_bytes(&v).map_err(s2d)
+    }
 }
 
 fn d2s<D, S>(d: D) -> S
