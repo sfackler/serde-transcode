@@ -99,3 +99,15 @@ fn u64() {
     test(0u64);
     test(u32::max_value() as u64 + 1);
 }
+
+#[test]
+fn f32() {
+    test(1.3f32);
+    test(-1e10f32);
+}
+
+#[test]
+fn f64() {
+    test(1.3f64);
+    test(-1e10f64);
+}

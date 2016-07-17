@@ -99,6 +99,18 @@ impl<'a, S> de::Visitor for Visitor<'a, S>
         self.0.serialize_u64(v).map_err(s2d)
     }
 
+    fn visit_f32<E>(&mut self, v: f32) -> Result<(), E>
+        where E: de::Error
+    {
+        self.0.serialize_f32(v).map_err(s2d)
+    }
+
+    fn visit_f64<E>(&mut self, v: f64) -> Result<(), E>
+        where E: de::Error
+    {
+        self.0.serialize_f64(v).map_err(s2d)
+    }
+
     fn visit_none<E>(&mut self) -> Result<(), E>
         where E: de::Error
     {
