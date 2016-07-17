@@ -152,6 +152,12 @@ impl<'a, S> de::Visitor for Visitor<'a, S>
     {
         self.0.serialize_some(&Transcoder::new(d)).map_err(s2d)
     }
+
+    fn visit_newtype_struct<D>(&mut self, d: &mut D) -> Result<(), D::Error>
+        where D: de::Deserializer
+    {
+        self.0.serialize_newtype_struct("<unknown>", &Transcoder::new(d)).map_err(s2d)
+    }
 }
 
 fn d2s<D, S>(d: D) -> S

@@ -1,13 +1,13 @@
 extern crate serde_json;
 extern crate serde_yaml;
 
-use serde::{Serialize, Deserialize};
+use serde::{ser, de};
 use std::fmt;
 
 use super::*;
 
 fn test<T>(input: T)
-    where T: fmt::Debug + PartialEq + Serialize + Deserialize
+    where T: fmt::Debug + PartialEq + ser::Serialize + de::Deserialize
 {
     let json = serde_json::to_string(&input).unwrap();
     println!("json: {}", json);
@@ -128,4 +128,85 @@ fn none() {
 fn some() {
     test(Some(0i32));
     test(Some("hi".to_string()));
+}
+
+#[test]
+fn unit_struct() {
+    #[derive(PartialEq, Debug)]
+    struct Foo;
+
+    impl ser::Serialize for Foo {
+        fn serialize<S>(&self, s: &mut S) -> Result<(), S::Error>
+            where S: ser::Serializer
+        {
+            s.serialize_unit_struct("Foo")
+        }
+    }
+
+    impl de::Deserialize for Foo {
+        fn deserialize<D>(d: &mut D) -> Result<Foo, D::Error>
+            where D: de::Deserializer
+        {
+            struct V;
+
+            impl de::Visitor for V {
+                type Value = Foo;
+
+                fn visit_unit<E>(&mut self) -> Result<Foo, E>
+                    where E: de::Error
+                {
+                    Ok(Foo)
+                }
+
+                fn visit_unit_struct<E>(&mut self, name: &'static str) -> Result<Foo, E>
+                    where E: de::Error
+                {
+                    match name {
+                        "Foo" => Ok(Foo),
+                        n => Err(E::invalid_value(n)),
+                    }
+                }
+            }
+
+            d.deserialize_unit_struct("Foo", V)
+        }
+    }
+
+    test(Foo);
+}
+
+#[test]
+fn newtype_struct() {
+    #[derive(PartialEq, Debug)]
+    struct Foo(i32);
+
+    impl ser::Serialize for Foo {
+        fn serialize<S>(&self, s: &mut S) -> Result<(), S::Error>
+            where S: ser::Serializer
+        {
+            s.serialize_newtype_struct("Foo", &self.0)
+        }
+    }
+
+    impl de::Deserialize for Foo {
+        fn deserialize<D>(d: &mut D) -> Result<Foo, D::Error>
+            where D: de::Deserializer
+        {
+            struct V;
+
+            impl de::Visitor for V {
+                type Value = Foo;
+
+                fn visit_newtype_struct<D>(&mut self, d: &mut D) -> Result<Foo, D::Error>
+                    where D: de::Deserializer
+                {
+                    Ok(Foo(try!(de::Deserialize::deserialize(d))))
+                }
+            }
+
+            d.deserialize_newtype_struct("Foo", V)
+        }
+    }
+
+    test(Foo(100));
 }
