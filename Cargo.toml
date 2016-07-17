@@ -4,3 +4,8 @@ version = "0.1.0"
 authors = ["Steven Fackler <sfackler@palantir.com>"]
 
 [dependencies]
+serde = "0.7"
+
+[dev-dependencies]
+serde_json = "0.7"
+serde_yaml = "0.3"
