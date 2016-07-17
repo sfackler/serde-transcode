@@ -6,17 +6,17 @@ use std::cell::RefCell;
 #[cfg(test)]
 mod test;
 
-pub struct Transcoder<D>(RefCell<D>);
+pub struct Transcoder<'a, D: 'a>(RefCell<&'a mut D>);
 
-impl<D> Transcoder<D>
+impl<'a, D> Transcoder<'a, D>
     where D: de::Deserializer
 {
-    pub fn new(d: D) -> Transcoder<D> {
+    pub fn new(d: &'a mut D) -> Transcoder<'a, D> {
         Transcoder(RefCell::new(d))
     }
 }
 
-impl<D> ser::Serialize for Transcoder<D>
+impl<'a, D> ser::Serialize for Transcoder<'a, D>
     where D: de::Deserializer
 {
     fn serialize<S>(&self, s: &mut S) -> Result<(), S::Error>
@@ -129,12 +129,6 @@ impl<'a, S> de::Visitor for Visitor<'a, S>
         self.0.serialize_str(&v).map_err(s2d)
     }
 
-    fn visit_none<E>(&mut self) -> Result<(), E>
-        where E: de::Error
-    {
-        self.0.serialize_none().map_err(s2d)
-    }
-
     fn visit_unit<E>(&mut self) -> Result<(), E>
         where E: de::Error
     {
@@ -145,6 +139,18 @@ impl<'a, S> de::Visitor for Visitor<'a, S>
         where E: de::Error
     {
         self.0.serialize_unit_struct(name).map_err(s2d)
+    }
+
+    fn visit_none<E>(&mut self) -> Result<(), E>
+        where E: de::Error
+    {
+        self.0.serialize_none().map_err(s2d)
+    }
+
+    fn visit_some<D>(&mut self, d: &mut D) -> Result<(), D::Error>
+        where D: de::Deserializer
+    {
+        self.0.serialize_some(&Transcoder::new(d)).map_err(s2d)
     }
 }
 

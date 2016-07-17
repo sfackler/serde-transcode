@@ -11,8 +11,8 @@ fn test<T>(input: T)
 {
     let json = serde_json::to_string(&input).unwrap();
     println!("json: {}", json);
-    let de = serde_json::Deserializer::new(json.bytes().map(Ok));
-    let yaml = serde_yaml::to_string(&Transcoder::new(de)).unwrap();
+    let mut de = serde_json::Deserializer::new(json.bytes().map(Ok));
+    let yaml = serde_yaml::to_string(&Transcoder::new(&mut de)).unwrap();
     println!("yaml: {}", yaml);
     let output: T = serde_yaml::from_str(&yaml).unwrap();
     println!("output: {:?}", output);
@@ -122,4 +122,10 @@ fn unit() {
 #[test]
 fn none() {
     test(None::<i32>);
+}
+
+#[test]
+fn some() {
+    test(Some(0i32));
+    test(Some("hi".to_string()));
 }
