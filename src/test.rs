@@ -17,6 +17,12 @@ fn test<T>(input: T)
 }
 
 #[test]
+fn bool() {
+    test(true);
+    test(false);
+}
+
+#[test]
 fn unit() {
     test(());
 }

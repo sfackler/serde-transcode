@@ -33,6 +33,12 @@ impl<'a, S> de::Visitor for Visitor<'a, S>
 {
     type Value = ();
 
+    fn visit_bool<E>(&mut self, v: bool) -> Result<(), E>
+        where E: de::Error
+    {
+        self.0.serialize_bool(v).map_err(s2d)
+    }
+
     fn visit_none<E>(&mut self) -> Result<(), E>
         where E: de::Error
     {
