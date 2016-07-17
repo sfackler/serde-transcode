@@ -39,6 +39,66 @@ impl<'a, S> de::Visitor for Visitor<'a, S>
         self.0.serialize_bool(v).map_err(s2d)
     }
 
+    fn visit_isize<E>(&mut self, v: isize) -> Result<(), E>
+        where E: de::Error
+    {
+        self.0.serialize_isize(v).map_err(s2d)
+    }
+
+    fn visit_i8<E>(&mut self, v: i8) -> Result<(), E>
+        where E: de::Error
+    {
+        self.0.serialize_i8(v).map_err(s2d)
+    }
+
+    fn visit_i16<E>(&mut self, v: i16) -> Result<(), E>
+        where E: de::Error
+    {
+        self.0.serialize_i16(v).map_err(s2d)
+    }
+
+    fn visit_i32<E>(&mut self, v: i32) -> Result<(), E>
+        where E: de::Error
+    {
+        self.0.serialize_i32(v).map_err(s2d)
+    }
+
+    fn visit_i64<E>(&mut self, v: i64) -> Result<(), E>
+        where E: de::Error
+    {
+        self.0.serialize_i64(v).map_err(s2d)
+    }
+
+    fn visit_usize<E>(&mut self, v: usize) -> Result<(), E>
+        where E: de::Error
+    {
+        self.0.serialize_usize(v).map_err(s2d)
+    }
+
+    fn visit_u8<E>(&mut self, v: u8) -> Result<(), E>
+        where E: de::Error
+    {
+        self.0.serialize_u8(v).map_err(s2d)
+    }
+
+    fn visit_u16<E>(&mut self, v: u16) -> Result<(), E>
+        where E: de::Error
+    {
+        self.0.serialize_u16(v).map_err(s2d)
+    }
+
+    fn visit_u32<E>(&mut self, v: u32) -> Result<(), E>
+        where E: de::Error
+    {
+        self.0.serialize_u32(v).map_err(s2d)
+    }
+
+    fn visit_u64<E>(&mut self, v: u64) -> Result<(), E>
+        where E: de::Error
+    {
+        self.0.serialize_u64(v).map_err(s2d)
+    }
+
     fn visit_none<E>(&mut self) -> Result<(), E>
         where E: de::Error
     {
