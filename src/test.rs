@@ -111,3 +111,15 @@ fn f64() {
     test(1.3f64);
     test(-1e10f64);
 }
+
+#[test]
+fn char() {
+    test('a');
+    test('\0');
+}
+
+#[test]
+fn str() {
+    test("hello world".to_string());
+    test("".to_string());
+}

@@ -111,6 +111,24 @@ impl<'a, S> de::Visitor for Visitor<'a, S>
         self.0.serialize_f64(v).map_err(s2d)
     }
 
+    fn visit_char<E>(&mut self, v: char) -> Result<(), E>
+        where E: de::Error
+    {
+        self.0.serialize_char(v).map_err(s2d)
+    }
+
+    fn visit_str<E>(&mut self, v: &str) -> Result<(), E>
+        where E: de::Error
+    {
+        self.0.serialize_str(v).map_err(s2d)
+    }
+
+    fn visit_string<E>(&mut self, v: String) -> Result<(), E>
+        where E: de::Error
+    {
+        self.0.serialize_str(&v).map_err(s2d)
+    }
+
     fn visit_none<E>(&mut self) -> Result<(), E>
         where E: de::Error
     {
