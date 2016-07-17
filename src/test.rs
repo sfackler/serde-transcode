@@ -26,16 +26,6 @@ fn bool() {
 }
 
 #[test]
-fn unit() {
-    test(());
-}
-
-#[test]
-fn none() {
-    test(None::<i32>);
-}
-
-#[test]
 fn isize() {
     test(isize::min_value());
     test(0isize);
@@ -122,4 +112,14 @@ fn char() {
 fn str() {
     test("hello world".to_string());
     test("".to_string());
+}
+
+#[test]
+fn unit() {
+    test(());
+}
+
+#[test]
+fn none() {
+    test(None::<i32>);
 }
