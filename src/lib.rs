@@ -159,6 +159,18 @@ impl<'a, S> de::Visitor for Visitor<'a, S>
         self.0.serialize_newtype_struct("<unknown>", &Transcoder::new(d)).map_err(s2d)
     }
 
+    fn visit_seq<V>(&mut self, _: V) -> Result<(), V::Error>
+        where V: de::SeqVisitor
+    {
+        unimplemented!()
+    }
+
+    fn visit_map<V>(&mut self, _: V) -> Result<(), V::Error>
+        where V: de::MapVisitor
+    {
+        unimplemented!()
+    }
+
     fn visit_bytes<E>(&mut self, v: &[u8]) -> Result<(), E>
         where E: de::Error
     {
