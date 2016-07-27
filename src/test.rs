@@ -210,3 +210,8 @@ fn newtype_struct() {
 
     test(Foo(100));
 }
+
+#[test]
+fn seq() {
+    test(vec![0, 1, 2, 3]);
+}

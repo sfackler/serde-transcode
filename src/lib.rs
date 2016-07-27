@@ -2,6 +2,7 @@ extern crate serde;
 
 use serde::{de, ser};
 use std::cell::RefCell;
+use std::marker::PhantomData;
 
 #[cfg(test)]
 mod test;
@@ -159,10 +160,18 @@ impl<'a, S> de::Visitor for Visitor<'a, S>
         self.0.serialize_newtype_struct("<unknown>", &Transcoder::new(d)).map_err(s2d)
     }
 
-    fn visit_seq<V>(&mut self, _: V) -> Result<(), V::Error>
+    fn visit_seq<V>(&mut self, mut v: V) -> Result<(), V::Error>
         where V: de::SeqVisitor
     {
-        unimplemented!()
+        let mut state = try!(self.0.serialize_seq(None).map_err(s2d));
+        let raw = (self as *mut _ as *mut _, &mut state as *mut _ as *mut _);
+        SERIALIZERS.with(|s| {
+            s.borrow_mut().push(raw);
+        });
+        let _guard = SerializersPopper;
+        while let Some(_) = try!(v.visit::<SeqEltProxy<S>>()) {
+        }
+        self.0.serialize_seq_end(state).map_err(s2d)
     }
 
     fn visit_map<V>(&mut self, _: V) -> Result<(), V::Error>
@@ -181,6 +190,41 @@ impl<'a, S> de::Visitor for Visitor<'a, S>
         where E: de::Error
     {
         self.0.serialize_bytes(&v).map_err(s2d)
+    }
+}
+
+thread_local! {
+    static SERIALIZERS: RefCell<Vec<(*mut (), *mut ())>> = RefCell::new(Vec::new())
+}
+
+struct SerializersPopper;
+
+impl Drop for SerializersPopper {
+    fn drop(&mut self) {
+        SERIALIZERS.with(|s| {
+            s.borrow_mut().pop().unwrap();
+        });
+    }
+}
+
+struct SeqEltProxy<'a, S: 'a>(PhantomData<(&'a mut S, &'a mut S::SeqState)>)
+    where S: ser::Serializer;
+
+impl<'a, S> de::Deserialize for SeqEltProxy<'a, S>
+    where S: ser::Serializer
+{
+    fn deserialize<D>(d: &mut D) -> Result<SeqEltProxy<'a, S>, D::Error>
+        where D: de::Deserializer
+    {
+        let (s, state) = SERIALIZERS.with(|s| {
+            *s.borrow().last().unwrap()
+        });
+        let s: &'a mut S = unsafe { &mut*(s as *mut S) };
+        let state: &'a mut S::SeqState = unsafe { &mut*(state as *mut S::SeqState) };
+
+        s.serialize_seq_elt(state, &Transcoder::new(d))
+            .map(|()| SeqEltProxy(PhantomData))
+            .map_err(s2d)
     }
 }
 
