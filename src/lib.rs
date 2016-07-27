@@ -165,9 +165,7 @@ impl<'a, S> de::Visitor for Visitor<'a, S>
     {
         let mut state = try!(self.0.serialize_seq(None).map_err(s2d));
         let raw = (self as *mut _ as *mut _, &mut state as *mut _ as *mut _);
-        SERIALIZERS.with(|s| {
-            s.borrow_mut().push(raw);
-        });
+        SERIALIZERS.with(|s| s.borrow_mut().push(raw));
         let _guard = SerializersPopper;
         while let Some(_) = try!(v.visit::<SeqEltProxy<S>>()) {
         }
@@ -201,9 +199,7 @@ struct SerializersPopper;
 
 impl Drop for SerializersPopper {
     fn drop(&mut self) {
-        SERIALIZERS.with(|s| {
-            s.borrow_mut().pop().unwrap();
-        });
+        SERIALIZERS.with(|s| s.borrow_mut().pop().unwrap());
     }
 }
 
@@ -216,9 +212,7 @@ impl<'a, S> de::Deserialize for SeqEltProxy<'a, S>
     fn deserialize<D>(d: &mut D) -> Result<SeqEltProxy<'a, S>, D::Error>
         where D: de::Deserializer
     {
-        let (s, state) = SERIALIZERS.with(|s| {
-            *s.borrow().last().unwrap()
-        });
+        let (s, state) = SERIALIZERS.with(|s| *s.borrow().last().unwrap());
         let s: &'a mut S = unsafe { &mut*(s as *mut S) };
         let state: &'a mut S::SeqState = unsafe { &mut*(state as *mut S::SeqState) };
 
