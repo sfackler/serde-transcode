@@ -7,6 +7,35 @@ use std::marker::PhantomData;
 #[cfg(test)]
 mod test;
 
+/// A Serde transcoder.
+///
+/// # Note
+///
+/// Unlike traditional serializable types, `Transcoder`'s `Serialize`
+/// implementation is *not* idempotent, as it advances the state of its
+/// internal `Deserializer`. It should only ever be serialized once.
+///
+/// # Examples
+///
+/// Read a JSON file in and pretty-print it.
+///
+/// ```no_run
+/// extern crate serde_json;
+/// extern crate serde_transcode;
+///
+/// use serde_json::Deserializer;
+/// use serde_transcode::Transcoder;
+/// use std::io::{Read, BufReader, BufWriter};
+/// use std::fs::File;
+///
+/// fn main() {
+///     let reader = BufReader::new(File::open("input.json").unwrap());
+///     let mut deserializer = Deserializer::new(reader.bytes());
+///     let transcoder = Transcoder::new(&mut deserializer);
+///     let mut writer = BufWriter::new(File::create("output.json").unwrap());
+///     serde_json::to_writer_pretty(&mut writer, &transcoder).unwrap();
+/// }
+/// ```
 pub struct Transcoder<'a, D: 'a>(RefCell<&'a mut D>);
 
 impl<'a, D> Transcoder<'a, D>
