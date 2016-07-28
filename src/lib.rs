@@ -204,10 +204,10 @@ thread_local! {
     static SERIALIZERS: RefCell<Vec<(*mut (), *mut ())>> = RefCell::new(Vec::new())
 }
 
-fn get_serializer<'a, S, T>() -> (&'a mut S, &'a mut T) {
+unsafe fn get_serializer<'a, S, T>() -> (&'a mut S, &'a mut T) {
     let (s, state) = SERIALIZERS.with(|s| *s.borrow().last().unwrap());
-    let s: &'a mut S = unsafe { &mut *(s as *mut S) };
-    let state: &'a mut T = unsafe { &mut *(state as *mut T) };
+    let s: &'a mut S = &mut *(s as *mut S);
+    let state: &'a mut T = &mut *(state as *mut T);
     (s, state)
 }
 
@@ -228,7 +228,7 @@ impl<'a, S> de::Deserialize for SeqEltProxy<'a, S>
     fn deserialize<D>(d: &mut D) -> Result<SeqEltProxy<'a, S>, D::Error>
         where D: de::Deserializer
     {
-        let (s, state) = get_serializer::<S, S::SeqState>();
+        let (s, state) = unsafe { get_serializer::<S, S::SeqState>() };
 
         s.serialize_seq_elt(state, &Transcoder::new(d))
             .map(|()| SeqEltProxy(PhantomData))
@@ -245,7 +245,7 @@ impl<'a, S> de::Deserialize for MapKeyProxy<'a, S>
     fn deserialize<D>(d: &mut D) -> Result<MapKeyProxy<'a, S>, D::Error>
         where D: de::Deserializer
     {
-        let (s, state) = get_serializer::<S, S::MapState>();
+        let (s, state) = unsafe { get_serializer::<S, S::MapState>() };
 
         s.serialize_map_key(state, &Transcoder::new(d))
             .map(|()| MapKeyProxy(PhantomData))
@@ -262,7 +262,7 @@ impl<'a, S> de::Deserialize for MapValueProxy<'a, S>
     fn deserialize<D>(d: &mut D) -> Result<MapValueProxy<'a, S>, D::Error>
         where D: de::Deserializer
     {
-        let (s, state) = get_serializer::<S, S::MapState>();
+        let (s, state) = unsafe { get_serializer::<S, S::MapState>() };
 
         s.serialize_map_value(state, &Transcoder::new(d))
             .map(|()| MapValueProxy(PhantomData))
