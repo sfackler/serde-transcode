@@ -166,7 +166,7 @@ impl<'a, S> de::Visitor for Visitor<'a, S>
         let mut state = try!(self.0.serialize_seq(None).map_err(s2d));
         let raw = (self as *mut _ as *mut _, &mut state as *mut _ as *mut _);
         SERIALIZERS.with(|s| s.borrow_mut().push(raw));
-        let _guard = SerializersPopper;
+        let _guard = SerializersGuard;
         while let Some(_) = try!(v.visit::<SeqEltProxy<S>>()) {
         }
         try!(v.end());
@@ -179,7 +179,7 @@ impl<'a, S> de::Visitor for Visitor<'a, S>
         let mut state = try!(self.0.serialize_map(None).map_err(s2d));
         let raw = (self as *mut _ as *mut _, &mut state as *mut _ as *mut _);
         SERIALIZERS.with(|s| s.borrow_mut().push(raw));
-        let _guard = SerializersPopper;
+        let _guard = SerializersGuard;
         while let Some(_) = try!(v.visit_key::<MapKeyProxy<S>>()) {
             try!(v.visit_value::<MapValueProxy<S>>());
         }
@@ -211,9 +211,9 @@ unsafe fn get_serializer<'a, S, T>() -> (&'a mut S, &'a mut T) {
     (s, state)
 }
 
-struct SerializersPopper;
+struct SerializersGuard;
 
-impl Drop for SerializersPopper {
+impl Drop for SerializersGuard {
     fn drop(&mut self) {
         SERIALIZERS.with(|s| s.borrow_mut().pop().unwrap());
     }
