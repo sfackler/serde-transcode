@@ -2,6 +2,7 @@ extern crate serde_json;
 extern crate serde_yaml;
 
 use serde::{ser, de};
+use std::collections::HashMap;
 use std::fmt;
 
 use super::*;
@@ -214,4 +215,12 @@ fn newtype_struct() {
 #[test]
 fn seq() {
     test(vec![0, 1, 2, 3]);
+}
+
+#[test]
+fn map() {
+    let mut map = HashMap::new();
+    map.insert("hello".to_owned(), vec![1, 2]);
+    map.insert("goodbye".to_owned(), vec![]);
+    test(map);
 }

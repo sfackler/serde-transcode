@@ -169,13 +169,22 @@ impl<'a, S> de::Visitor for Visitor<'a, S>
         let _guard = SerializersPopper;
         while let Some(_) = try!(v.visit::<SeqEltProxy<S>>()) {
         }
+        try!(v.end());
         self.0.serialize_seq_end(state).map_err(s2d)
     }
 
-    fn visit_map<V>(&mut self, _: V) -> Result<(), V::Error>
+    fn visit_map<V>(&mut self, mut v: V) -> Result<(), V::Error>
         where V: de::MapVisitor
     {
-        unimplemented!()
+        let mut state = try!(self.0.serialize_map(None).map_err(s2d));
+        let raw = (self as *mut _ as *mut _, &mut state as *mut _ as *mut _);
+        SERIALIZERS.with(|s| s.borrow_mut().push(raw));
+        let _guard = SerializersPopper;
+        while let Some(_) = try!(v.visit_key::<MapKeyProxy<S>>()) {
+            try!(v.visit_value::<MapValueProxy<S>>());
+        }
+        try!(v.end());
+        self.0.serialize_map_end(state).map_err(s2d)
     }
 
     fn visit_bytes<E>(&mut self, v: &[u8]) -> Result<(), E>
@@ -195,6 +204,13 @@ thread_local! {
     static SERIALIZERS: RefCell<Vec<(*mut (), *mut ())>> = RefCell::new(Vec::new())
 }
 
+fn get_serializer<'a, S, T>() -> (&'a mut S, &'a mut T) {
+    let (s, state) = SERIALIZERS.with(|s| *s.borrow().last().unwrap());
+    let s: &'a mut S = unsafe { &mut *(s as *mut S) };
+    let state: &'a mut T = unsafe { &mut *(state as *mut T) };
+    (s, state)
+}
+
 struct SerializersPopper;
 
 impl Drop for SerializersPopper {
@@ -212,12 +228,44 @@ impl<'a, S> de::Deserialize for SeqEltProxy<'a, S>
     fn deserialize<D>(d: &mut D) -> Result<SeqEltProxy<'a, S>, D::Error>
         where D: de::Deserializer
     {
-        let (s, state) = SERIALIZERS.with(|s| *s.borrow().last().unwrap());
-        let s: &'a mut S = unsafe { &mut*(s as *mut S) };
-        let state: &'a mut S::SeqState = unsafe { &mut*(state as *mut S::SeqState) };
+        let (s, state) = get_serializer::<S, S::SeqState>();
 
         s.serialize_seq_elt(state, &Transcoder::new(d))
             .map(|()| SeqEltProxy(PhantomData))
+            .map_err(s2d)
+    }
+}
+
+struct MapKeyProxy<'a, S: 'a>(PhantomData<(&'a mut S, &'a mut S::MapState)>)
+    where S: ser::Serializer;
+
+impl<'a, S> de::Deserialize for MapKeyProxy<'a, S>
+    where S: ser::Serializer
+{
+    fn deserialize<D>(d: &mut D) -> Result<MapKeyProxy<'a, S>, D::Error>
+        where D: de::Deserializer
+    {
+        let (s, state) = get_serializer::<S, S::MapState>();
+
+        s.serialize_map_key(state, &Transcoder::new(d))
+            .map(|()| MapKeyProxy(PhantomData))
+            .map_err(s2d)
+    }
+}
+
+struct MapValueProxy<'a, S: 'a>(PhantomData<(&'a mut S, &'a mut S::MapState)>)
+    where S: ser::Serializer;
+
+impl<'a, S> de::Deserialize for MapValueProxy<'a, S>
+    where S: ser::Serializer
+{
+    fn deserialize<D>(d: &mut D) -> Result<MapValueProxy<'a, S>, D::Error>
+        where D: de::Deserializer
+    {
+        let (s, state) = get_serializer::<S, S::MapState>();
+
+        s.serialize_map_value(state, &Transcoder::new(d))
+            .map(|()| MapValueProxy(PhantomData))
             .map_err(s2d)
     }
 }

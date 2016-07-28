@@ -9,3 +9,8 @@ serde = "0.8.0-rc3"
 [dev-dependencies]
 serde_json = "0.8.0-rc1"
 serde_yaml = "0.4.0-rc1"
+
+[replace]
+"serde:0.8.0-rc3" = { git = "https://github.com/serde-rs/serde" }
+"serde_json:0.8.0-rc1" = { git = "https://github.com/sfackler/json" }
+"serde_yaml:0.4.0-rc1" = { git = "https://github.com/sfackler/serde-yaml" }
