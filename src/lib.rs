@@ -1,3 +1,36 @@
+//! Transcode from one Serde format to another.
+//!
+//! This crate provides functionality to "transcode" from an arbitrary Serde
+//! `Deserializer` to an arbitrary Serde `Serializer` without needing to
+//! collect the entire input into an intermediate form in memory. For example,
+//! you could translate a stream of JSON data into a stream of CBOR data, or
+//! translate JSON into its pretty-printed form.
+//!
+//! # Examples
+//!
+//! Translate a JSON file to a pretty-printed version.
+//!
+//! ```no_run
+//! extern crate serde;
+//! extern crate serde_json;
+//! extern crate serde_transcode;
+//!
+//! use serde::Serialize;
+//! use serde_json::{Serializer, Deserializer};
+//! use serde_transcode::Transcoder;
+//! use std::io::{Read, Write, BufReader, BufWriter};
+//! use std::fs::File;
+//!
+//! fn main() {
+//!     let reader = BufReader::new(File::open("input.json").unwrap());
+//!     let writer = BufWriter::new(File::create("output.json").unwrap());
+//!
+//!     let mut deserializer = Deserializer::new(reader.bytes());
+//!     let mut serializer = Serializer::pretty(writer);
+//!     Transcoder::new(&mut deserializer).serialize(&mut serializer).unwrap();
+//!     serializer.into_inner().flush().unwrap();
+//! }
+//! ```
 extern crate serde;
 
 use serde::{de, ser};
@@ -14,33 +47,12 @@ mod test;
 /// Unlike traditional serializable types, `Transcoder`'s `Serialize`
 /// implementation is *not* idempotent, as it advances the state of its
 /// internal `Deserializer`. It should only ever be serialized once.
-///
-/// # Examples
-///
-/// Read a JSON file in and pretty-print it.
-///
-/// ```no_run
-/// extern crate serde_json;
-/// extern crate serde_transcode;
-///
-/// use serde_json::Deserializer;
-/// use serde_transcode::Transcoder;
-/// use std::io::{Read, BufReader, BufWriter};
-/// use std::fs::File;
-///
-/// fn main() {
-///     let reader = BufReader::new(File::open("input.json").unwrap());
-///     let mut deserializer = Deserializer::new(reader.bytes());
-///     let transcoder = Transcoder::new(&mut deserializer);
-///     let mut writer = BufWriter::new(File::create("output.json").unwrap());
-///     serde_json::to_writer_pretty(&mut writer, &transcoder).unwrap();
-/// }
-/// ```
 pub struct Transcoder<'a, D: 'a>(RefCell<&'a mut D>);
 
 impl<'a, D> Transcoder<'a, D>
     where D: de::Deserializer
 {
+    /// Constructs a new `Transcoder`.
     pub fn new(d: &'a mut D) -> Transcoder<'a, D> {
         Transcoder(RefCell::new(d))
     }
