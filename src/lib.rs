@@ -208,7 +208,7 @@ impl<'a, S> de::Visitor for Visitor<'a, S>
         where V: de::SeqVisitor
     {
         let mut state = try!(self.0.serialize_seq(None).map_err(s2d));
-        let raw = (self as *mut _ as *mut _, &mut state as *mut _ as *mut _);
+        let raw = (self.0 as *mut S as *mut (), &mut state as *mut S::SeqState as *mut ());
         SERIALIZERS.with(|s| s.borrow_mut().push(raw));
         let _guard = SerializersGuard;
         while let Some(_) = try!(v.visit::<SeqEltProxy<S>>()) {
@@ -221,7 +221,7 @@ impl<'a, S> de::Visitor for Visitor<'a, S>
         where V: de::MapVisitor
     {
         let mut state = try!(self.0.serialize_map(None).map_err(s2d));
-        let raw = (self as *mut _ as *mut _, &mut state as *mut _ as *mut _);
+        let raw = (self.0 as *mut S as *mut (), &mut state as *mut S::MapState as *mut ());
         SERIALIZERS.with(|s| s.borrow_mut().push(raw));
         let _guard = SerializersGuard;
         while let Some(_) = try!(v.visit_key::<MapKeyProxy<S>>()) {
