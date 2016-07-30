@@ -1,11 +1,7 @@
 language: rust
+cache: cargo
 rust:
 - nightly
-- beta
-- 1.7.0
-before_script:
-- ssh-keygen -t rsa -b 2048 -N "" -f ~/.ssh/id_rsa
-- cp ~/.ssh/id_rsa.pub ~/.ssh/authorized_keys
-- ssh -oStrictHostKeyChecking=no -Nf -D 127.0.0.1:8080 localhost
+- 1.9.0
 script:
 - cargo test
