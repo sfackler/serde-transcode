@@ -2,6 +2,11 @@
 name = "serde-transcode"
 version = "0.1.0"
 authors = ["Steven Fackler <sfackler@palantir.com>"]
+license = "MIT/Apache-2.0"
+description = "Transcode from one Serde format to another"
+repository = "https://github.com/sfackler/serde-transcode"
+documentation = "https://sfackler.github.io/serde-transcode/doc/v0.1.0/serde_transcode"
+readme = "README.md"
 
 [dependencies]
 serde = "0.8"
