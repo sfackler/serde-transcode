@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["transcode","Transcodes from a Serde `Deserializer` to a Serde `Serializer`."]],"struct":[["Transcoder","A Serde transcoder."]]});

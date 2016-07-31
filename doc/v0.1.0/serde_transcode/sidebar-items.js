@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Transcoder","A Serde transcoder."]]});
