@@ -17,7 +17,6 @@
 //!
 //! use serde::Serialize;
 //! use serde_json::{Serializer, Deserializer};
-//! use serde_transcode::Transcoder;
 //! use std::io::{Read, Write, BufReader, BufWriter};
 //! use std::fs::File;
 //!
@@ -27,7 +26,7 @@
 //!
 //!     let mut deserializer = Deserializer::new(reader.bytes());
 //!     let mut serializer = Serializer::pretty(writer);
-//!     Transcoder::new(&mut deserializer).serialize(&mut serializer).unwrap();
+//!     serde_transcode::transcode(&mut deserializer, &mut serializer).unwrap();
 //!     serializer.into_inner().flush().unwrap();
 //! }
 //! ```
@@ -36,14 +35,25 @@
 
 extern crate serde;
 
-use serde::{de, ser};
+use serde::{de, ser, Serialize};
 use std::cell::RefCell;
 use std::marker::PhantomData;
 
 #[cfg(test)]
 mod test;
 
+/// Transcodes from a Serde `Deserializer` to a Serde `Serializer`.
+pub fn transcode<D, S>(d: &mut D, s: &mut S) -> Result<(), S::Error>
+    where D: de::Deserializer,
+          S: ser::Serializer
+{
+    Transcoder::new(d).serialize(s)
+}
+
 /// A Serde transcoder.
+///
+/// In most cases, the `transcode` function should be used instead of this
+/// type.
 ///
 /// # Note
 ///
