@@ -31,7 +31,7 @@
 //! }
 //! ```
 #![warn(missing_docs)]
-#![doc(html_root_url="https://sfackler.github.io/serde-transcode/doc/v0.1.0")]
+#![doc(html_root_url="https://sfackler.github.io/serde-transcode/doc/v0.1.1")]
 
 extern crate serde;
 
