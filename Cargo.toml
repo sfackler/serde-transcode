@@ -10,6 +10,7 @@ readme = "README.md"
 
 [dependencies]
 serde = "0.8"
+serde-stateful-deserialize = { git = "https://github.com/sfackler/serde-stateful-deserialize" }
 
 [dev-dependencies]
 serde_json = "0.8"
