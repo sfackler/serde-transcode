@@ -1,5 +1,4 @@
 extern crate serde_json;
-extern crate serde_yaml;
 
 use serde::{ser, de};
 use std::collections::HashMap;
@@ -12,10 +11,10 @@ fn test<T>(input: T)
 {
     let json = serde_json::to_string(&input).unwrap();
     println!("json: {}", json);
-    let mut de = serde_json::Deserializer::new(json.bytes().map(Ok));
-    let yaml = serde_yaml::to_string(&Transcoder::new(&mut de)).unwrap();
-    println!("yaml: {}", yaml);
-    let output: T = serde_yaml::from_str(&yaml).unwrap();
+    let mut de = serde_json::Deserializer::from_str(&json);
+    let pretty = serde_json::to_string_pretty(&Transcoder::new(&mut de)).unwrap();
+    println!("pretty: {}", pretty);
+    let output: T = serde_json::from_str(&pretty).unwrap();
     println!("output: {:?}", output);
     assert_eq!(input, output);
 }
@@ -132,57 +131,12 @@ fn some() {
 }
 
 #[test]
-fn unit_struct() {
-    #[derive(PartialEq, Debug)]
-    struct Foo;
-
-    impl ser::Serialize for Foo {
-        fn serialize<S>(&self, s: &mut S) -> Result<(), S::Error>
-            where S: ser::Serializer
-        {
-            s.serialize_unit_struct("Foo")
-        }
-    }
-
-    impl de::Deserialize for Foo {
-        fn deserialize<D>(d: &mut D) -> Result<Foo, D::Error>
-            where D: de::Deserializer
-        {
-            struct V;
-
-            impl de::Visitor for V {
-                type Value = Foo;
-
-                fn visit_unit<E>(&mut self) -> Result<Foo, E>
-                    where E: de::Error
-                {
-                    Ok(Foo)
-                }
-
-                fn visit_unit_struct<E>(&mut self, name: &'static str) -> Result<Foo, E>
-                    where E: de::Error
-                {
-                    match name {
-                        "Foo" => Ok(Foo),
-                        n => Err(E::invalid_value(n)),
-                    }
-                }
-            }
-
-            d.deserialize_unit_struct("Foo", V)
-        }
-    }
-
-    test(Foo);
-}
-
-#[test]
 fn newtype_struct() {
     #[derive(PartialEq, Debug)]
     struct Foo(i32);
 
     impl ser::Serialize for Foo {
-        fn serialize<S>(&self, s: &mut S) -> Result<(), S::Error>
+        fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
             where S: ser::Serializer
         {
             s.serialize_newtype_struct("Foo", &self.0)
@@ -190,7 +144,7 @@ fn newtype_struct() {
     }
 
     impl de::Deserialize for Foo {
-        fn deserialize<D>(d: &mut D) -> Result<Foo, D::Error>
+        fn deserialize<D>(d: D) -> Result<Foo, D::Error>
             where D: de::Deserializer
         {
             struct V;
@@ -198,7 +152,11 @@ fn newtype_struct() {
             impl de::Visitor for V {
                 type Value = Foo;
 
-                fn visit_newtype_struct<D>(&mut self, d: &mut D) -> Result<Foo, D::Error>
+                fn expecting(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+                    write!(fmt, "a Foo struct")
+                }
+
+                fn visit_newtype_struct<D>(self, d: D) -> Result<Foo, D::Error>
                     where D: de::Deserializer
                 {
                     Ok(Foo(try!(de::Deserialize::deserialize(d))))
