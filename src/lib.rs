@@ -217,17 +217,17 @@ impl<S> de::Visitor for Visitor<S>
     fn visit_seq<V>(self, mut v: V) -> Result<S::Ok, V::Error>
         where V: de::SeqVisitor
     {
-        let mut s = try!(self.0.serialize_seq(None).map_err(s2d));
-        while let Some(()) = try!(v.visit_seed(SeqSeed(&mut s))) {}
+        let mut s = self.0.serialize_seq(None).map_err(s2d)?;
+        while let Some(()) = v.visit_seed(SeqSeed(&mut s))? {}
         s.end().map_err(s2d)
     }
 
     fn visit_map<V>(self, mut v: V) -> Result<S::Ok, V::Error>
         where V: de::MapVisitor
     {
-        let mut s = try!(self.0.serialize_map(None).map_err(s2d));
-        while let Some(()) = try!(v.visit_key_seed(KeySeed(&mut s))) {
-            try!(v.visit_value_seed(ValueSeed(&mut s)));
+        let mut s = self.0.serialize_map(None).map_err(s2d)?;
+        while let Some(()) = v.visit_key_seed(KeySeed(&mut s))? {
+            v.visit_value_seed(ValueSeed(&mut s))?;
         }
         s.end().map_err(s2d)
     }
