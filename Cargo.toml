@@ -9,8 +9,8 @@ documentation = "https://sfackler.github.io/serde-transcode/doc/v0.1.1/serde_tra
 readme = "README.md"
 
 [dependencies]
-serde = "0.8"
+serde = { git = "https://github.com/serde-rs/serde" }
 
-[dev-dependencies]
-serde_json = "0.8"
-serde_yaml = "0.4"
+#[dev-dependencies]
+#serde_json = "0.8"
+#serde_yaml = "0.4"
