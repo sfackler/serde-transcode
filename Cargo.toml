@@ -11,5 +11,5 @@ readme = "README.md"
 [dependencies]
 serde = "0.9"
 
-#[dev-dependencies]
+[dev-dependencies]
 serde_json = "0.9"
