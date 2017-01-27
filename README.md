@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/sfackler/serde-transcode.svg?branch=master)](https://travis-ci.org/sfackler/serde-transcode)
 
-[Documentation](https://sfackler.github.io/serde-transcode/doc/v0.1.1/serde_transcode)
+[Documentation](https://docs.rs/serde-transcode)
 
 Transcode from one Serde format to another.
 
