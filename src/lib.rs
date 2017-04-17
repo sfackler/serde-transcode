@@ -44,8 +44,8 @@ use std::fmt;
 mod test;
 
 /// Transcodes from a Serde `Deserializer` to a Serde `Serializer`.
-pub fn transcode<D, S>(d: D, s: S) -> Result<S::Ok, S::Error>
-    where D: de::Deserializer,
+pub fn transcode<'de, D, S>(d: D, s: S) -> Result<S::Ok, S::Error>
+    where D: de::Deserializer<'de>,
           S: ser::Serializer
 {
     Transcoder::new(d).serialize(s)
@@ -63,8 +63,8 @@ pub fn transcode<D, S>(d: D, s: S) -> Result<S::Ok, S::Error>
 /// internal `Deserializer`. It should only ever be serialized once.
 pub struct Transcoder<D>(RefCell<Option<D>>);
 
-impl<D> Transcoder<D>
-    where D: de::Deserializer
+impl<'de, D> Transcoder<D>
+    where D: de::Deserializer<'de>
 {
     /// Constructs a new `Transcoder`.
     pub fn new(d: D) -> Transcoder<D> {
@@ -72,19 +72,19 @@ impl<D> Transcoder<D>
     }
 }
 
-impl<D> ser::Serialize for Transcoder<D>
-    where D: de::Deserializer
+impl<'de, D> ser::Serialize for Transcoder<D>
+    where D: de::Deserializer<'de>
 {
     fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
         where S: ser::Serializer
     {
-        self.0.borrow_mut().take().unwrap().deserialize(Visitor(s)).map_err(d2s)
+        self.0.borrow_mut().take().unwrap().deserialize_any(Visitor(s)).map_err(d2s)
     }
 }
 
 struct Visitor<S>(S);
 
-impl<S> de::Visitor for Visitor<S>
+impl<'de, S> de::Visitor<'de> for Visitor<S>
     where S: ser::Serializer
 {
     type Value = S::Ok;
@@ -190,31 +190,31 @@ impl<S> de::Visitor for Visitor<S>
     }
 
     fn visit_some<D>(self, d: D) -> Result<S::Ok, D::Error>
-        where D: de::Deserializer
+        where D: de::Deserializer<'de>
     {
         self.0.serialize_some(&Transcoder::new(d)).map_err(s2d)
     }
 
     fn visit_newtype_struct<D>(self, d: D) -> Result<S::Ok, D::Error>
-        where D: de::Deserializer
+        where D: de::Deserializer<'de>
     {
         self.0.serialize_newtype_struct("<unknown>", &Transcoder::new(d)).map_err(s2d)
     }
 
     fn visit_seq<V>(self, mut v: V) -> Result<S::Ok, V::Error>
-        where V: de::SeqVisitor
+        where V: de::SeqAccess<'de>
     {
         let mut s = self.0.serialize_seq(None).map_err(s2d)?;
-        while let Some(()) = v.visit_seed(SeqSeed(&mut s))? {}
+        while let Some(()) = v.next_element_seed(SeqSeed(&mut s))? {}
         s.end().map_err(s2d)
     }
 
     fn visit_map<V>(self, mut v: V) -> Result<S::Ok, V::Error>
-        where V: de::MapVisitor
+        where V: de::MapAccess<'de>
     {
         let mut s = self.0.serialize_map(None).map_err(s2d)?;
-        while let Some(()) = v.visit_key_seed(KeySeed(&mut s))? {
-            v.visit_value_seed(ValueSeed(&mut s))?;
+        while let Some(()) = v.next_key_seed(KeySeed(&mut s))? {
+            v.next_value_seed(ValueSeed(&mut s))?;
         }
         s.end().map_err(s2d)
     }
@@ -234,13 +234,13 @@ impl<S> de::Visitor for Visitor<S>
 
 struct SeqSeed<'a, S: 'a>(&'a mut S);
 
-impl<'a, S> de::DeserializeSeed for SeqSeed<'a, S>
+impl<'de, 'a, S> de::DeserializeSeed<'de> for SeqSeed<'a, S>
     where S: ser::SerializeSeq
 {
     type Value = ();
 
     fn deserialize<D>(self, deserializer: D) -> Result<(), D::Error>
-        where D: de::Deserializer
+        where D: de::Deserializer<'de>
     {
         self.0.serialize_element(&Transcoder::new(deserializer)).map_err(s2d)
     }
@@ -248,13 +248,13 @@ impl<'a, S> de::DeserializeSeed for SeqSeed<'a, S>
 
 struct KeySeed<'a, S: 'a>(&'a mut S);
 
-impl<'a, S> de::DeserializeSeed for KeySeed<'a, S>
+impl<'de, 'a, S> de::DeserializeSeed<'de> for KeySeed<'a, S>
     where S: ser::SerializeMap
 {
     type Value = ();
 
     fn deserialize<D>(self, deserializer: D) -> Result<(), D::Error>
-        where D: de::Deserializer
+        where D: de::Deserializer<'de>
     {
         self.0.serialize_key(&Transcoder::new(deserializer)).map_err(s2d)
     }
@@ -262,13 +262,13 @@ impl<'a, S> de::DeserializeSeed for KeySeed<'a, S>
 
 struct ValueSeed<'a, S: 'a>(&'a mut S);
 
-impl<'a, S> de::DeserializeSeed for ValueSeed<'a, S>
+impl<'de, 'a, S> de::DeserializeSeed<'de> for ValueSeed<'a, S>
     where S: ser::SerializeMap
 {
     type Value = ();
 
     fn deserialize<D>(self, deserializer: D) -> Result<(), D::Error>
-        where D: de::Deserializer
+        where D: de::Deserializer<'de>
     {
         self.0.serialize_value(&Transcoder::new(deserializer)).map_err(s2d)
     }

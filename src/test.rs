@@ -7,7 +7,7 @@ use std::fmt;
 use super::*;
 
 fn test<T>(input: T)
-    where T: fmt::Debug + PartialEq + ser::Serialize + de::Deserialize
+    where T: fmt::Debug + PartialEq + ser::Serialize + de::DeserializeOwned
 {
     let json = serde_json::to_string(&input).unwrap();
     println!("json: {}", json);
@@ -143,13 +143,13 @@ fn newtype_struct() {
         }
     }
 
-    impl de::Deserialize for Foo {
+    impl<'de> de::Deserialize<'de> for Foo {
         fn deserialize<D>(d: D) -> Result<Foo, D::Error>
-            where D: de::Deserializer
+            where D: de::Deserializer<'de>
         {
             struct V;
 
-            impl de::Visitor for V {
+            impl<'de> de::Visitor<'de> for V {
                 type Value = Foo;
 
                 fn expecting(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
@@ -157,7 +157,7 @@ fn newtype_struct() {
                 }
 
                 fn visit_newtype_struct<D>(self, d: D) -> Result<Foo, D::Error>
-                    where D: de::Deserializer
+                    where D: de::Deserializer<'de>
                 {
                     Ok(Foo(try!(de::Deserialize::deserialize(d))))
                 }
