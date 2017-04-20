@@ -9,7 +9,7 @@ documentation = "https://docs.rs/serde-transcode/0.2.1/serde_transcode"
 readme = "README.md"
 
 [dependencies]
-serde = { git = "https://github.com/serde-rs/serde", branch = "1.0" }
+serde = "1.0"
 
 [dev-dependencies]
-serde_json = { git = "https://github.com/serde-rs/json", branch = "1.0" }
+serde_json = "1.0"
