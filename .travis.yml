@@ -2,6 +2,6 @@ language: rust
 cache: cargo
 rust:
 - nightly
-- 1.13.0
+- 1.15.0
 script:
 - cargo test
