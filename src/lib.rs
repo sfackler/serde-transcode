@@ -31,7 +31,7 @@
 //! }
 //! ```
 #![warn(missing_docs)]
-#![doc(html_root_url="https://docs.rs/serde-transcode/1.0.0")]
+#![doc(html_root_url="https://docs.rs/serde-transcode/1.0.1")]
 
 extern crate serde;
 
@@ -204,7 +204,7 @@ impl<'de, S> de::Visitor<'de> for Visitor<S>
     fn visit_seq<V>(self, mut v: V) -> Result<S::Ok, V::Error>
         where V: de::SeqAccess<'de>
     {
-        let mut s = self.0.serialize_seq(None).map_err(s2d)?;
+        let mut s = self.0.serialize_seq(v.size_hint()).map_err(s2d)?;
         while let Some(()) = v.next_element_seed(SeqSeed(&mut s))? {}
         s.end().map_err(s2d)
     }
@@ -212,7 +212,7 @@ impl<'de, S> de::Visitor<'de> for Visitor<S>
     fn visit_map<V>(self, mut v: V) -> Result<S::Ok, V::Error>
         where V: de::MapAccess<'de>
     {
-        let mut s = self.0.serialize_map(None).map_err(s2d)?;
+        let mut s = self.0.serialize_map(v.size_hint()).map_err(s2d)?;
         while let Some(()) = v.next_key_seed(KeySeed(&mut s))? {
             v.next_value_seed(ValueSeed(&mut s))?;
         }
