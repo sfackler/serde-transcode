@@ -33,6 +33,7 @@
 #![warn(missing_docs)]
 #![doc(html_root_url="https://docs.rs/serde-transcode/1.0.1")]
 
+#[macro_use]
 extern crate serde;
 
 use serde::de;
@@ -145,6 +146,20 @@ impl<'de, S> de::Visitor<'de> for Visitor<S>
         where E: de::Error
     {
         self.0.serialize_u64(v).map_err(s2d)
+    }
+
+    serde_if_integer128! {
+        fn visit_i128<E>(self, v: i128) -> Result<S::Ok, E>
+            where E: de::Error
+        {
+            self.0.serialize_i128(v).map_err(s2d)
+        }
+
+        fn visit_u128<E>(self, v: u128) -> Result<S::Ok, E>
+            where E: de::Error
+        {
+            self.0.serialize_u128(v).map_err(s2d)
+        }
     }
 
     fn visit_f32<E>(self, v: f32) -> Result<S::Ok, E>

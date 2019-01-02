@@ -90,6 +90,24 @@ fn u64() {
     test(u32::max_value() as u64 + 1);
 }
 
+serde_if_integer128! {
+    #[test]
+    fn i128() {
+        // JSON not support too large numbers
+        test(i64::min_value() as i128);
+        test(0i128);
+        // JSON not support too large numbers
+        test(i64::max_value() as i128 + 1);
+    }
+
+    #[test]
+    fn u128() {
+        test(0u128);
+        // JSON not support too large numbers
+        test(u32::max_value() as u128 + 1);
+    }
+}
+
 #[test]
 fn f32() {
     test(1.3f32);
