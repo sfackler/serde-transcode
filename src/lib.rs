@@ -79,7 +79,12 @@ impl<'de, D> ser::Serialize for Transcoder<D>
     fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
         where S: ser::Serializer
     {
-        self.0.borrow_mut().take().unwrap().deserialize_any(Visitor(s)).map_err(d2s)
+        self.0
+            .borrow_mut()
+            .take()
+            .expect("Transcoder could not serialize the input because its internal state was already advanced https://docs.rs/serde-transcode/1.1.0/serde_transcode/struct.Transcoder.html#note")
+            .deserialize_any(Visitor(s))
+            .map_err(d2s)
     }
 }
 
