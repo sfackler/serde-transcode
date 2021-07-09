@@ -82,7 +82,7 @@ impl<'de, D> ser::Serialize for Transcoder<D>
         self.0
             .borrow_mut()
             .take()
-            .expect("Transcoder could not serialize the input because its internal state was already advanced https://docs.rs/serde-transcode/1.1.0/serde_transcode/struct.Transcoder.html#note")
+            .expect("Transcoder may only be serialized once")
             .deserialize_any(Visitor(s))
             .map_err(d2s)
     }
