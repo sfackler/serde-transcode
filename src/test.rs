@@ -177,7 +177,7 @@ fn newtype_struct() {
                 fn visit_newtype_struct<D>(self, d: D) -> Result<Foo, D::Error>
                     where D: de::Deserializer<'de>
                 {
-                    Ok(Foo(try!(de::Deserialize::deserialize(d))))
+                    Ok(Foo(de::Deserialize::deserialize(d)?))
                 }
             }
 
@@ -199,4 +199,34 @@ fn map() {
     map.insert("hello".to_owned(), vec![1, 2]);
     map.insert("goodbye".to_owned(), vec![]);
     test(map);
+}
+
+#[test]
+fn deserializer_error() {
+    let data = &"{\"hello\":[123,[[\"world\"]]]}"[..20];
+    let mut buf: Vec<u8> = Vec::new();
+    let mut de = serde_json::Deserializer::from_str(data);
+    let mut ser = serde_json::Serializer::new(&mut buf);
+    let result = transcode(&mut de, &mut ser);
+    assert!(result.is_err());
+    let de_err = match result.unwrap_err() {
+        Error::DeserializerError(e) => Some(e),
+        _ => None,
+    };
+    assert!(de_err.is_some());
+}
+
+#[test]
+fn serializer_error() {
+    let data = "{\"hello\":[123,[[\"world\"]]]}";
+    let mut buf: Vec<u8> = vec![0; 20];
+    let mut de = serde_json::Deserializer::from_str(data);
+    let mut ser = serde_json::Serializer::new(buf.as_mut_slice());
+    let result = transcode(&mut de, &mut ser);
+    assert!(result.is_err());
+    let ser_err = match result.unwrap_err() {
+        Error::SerializerError(e) => Some(e),
+        _ => None,
+    };
+    assert!(ser_err.is_some());
 }
