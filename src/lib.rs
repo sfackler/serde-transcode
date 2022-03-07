@@ -85,9 +85,15 @@ impl<D, S> fmt::Display for Error<D, S>
 }
 
 impl<D, S> std::error::Error for Error<D, S>
-    where D: de::Error,
-          S: ser::Error
+    where D: de::Error + 'static,
+          S: ser::Error + 'static
 {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::DeserializerError(e) => Some(e),
+            Self::SerializerError(e) => Some(e),
+        }
+    }
 }
 
 /// A Serde transcoder.
