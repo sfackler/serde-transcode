@@ -157,27 +157,16 @@ impl<'de, D> ser::Serialize for Transcoder<'de, D>
 
 struct Visitor<S>(S);
 
-macro_rules! try_serializer {
-    ($expr:expr) => {
-        match $expr {
-            Ok(v) => Ok(Ok(v)),
-            Err(ser_err) => return Ok(Err(ser_err)),
-        }
-    };
-}
-
-macro_rules! with_transcoder {
-    ($deserializer:expr, |$transcoder:ident| $body:expr) => {{
-        let $transcoder = Transcoder::new($deserializer);
-        let result = $body;
-        match $transcoder.take_last_deserializer_error() {
-            Some(de_err) => Err(de_err),
-            None => match result {
-                Ok(v) => Ok(Ok(v)),
-                Err(ser_err) => Ok(Err(ser_err)),
-            },
-        }
-    }};
+fn with_transcoder<'de, D, T, F>(de: D, f: F) -> Result<T, D::Error>
+    where D: de::Deserializer<'de>,
+          F: FnOnce(&Transcoder<'de, D>) -> T
+{
+    let transcoder = Transcoder::new(de);
+    let ser_result = f(&transcoder);
+    match transcoder.take_last_deserializer_error() {
+        Some(de_err) => Err(de_err),
+        None => Ok(ser_result),
+    }
 }
 
 impl<'de, S> de::Visitor<'de> for Visitor<S>
@@ -192,123 +181,123 @@ impl<'de, S> de::Visitor<'de> for Visitor<S>
     fn visit_bool<E>(self, v: bool) -> Result<Self::Value, E>
         where E: de::Error
     {
-        try_serializer!(self.0.serialize_bool(v))
+        Ok(self.0.serialize_bool(v))
     }
 
     fn visit_i8<E>(self, v: i8) -> Result<Self::Value, E>
         where E: de::Error
     {
-        try_serializer!(self.0.serialize_i8(v))
+        Ok(self.0.serialize_i8(v))
     }
 
     fn visit_i16<E>(self, v: i16) -> Result<Self::Value, E>
         where E: de::Error
     {
-        try_serializer!(self.0.serialize_i16(v))
+        Ok(self.0.serialize_i16(v))
     }
 
     fn visit_i32<E>(self, v: i32) -> Result<Self::Value, E>
         where E: de::Error
     {
-        try_serializer!(self.0.serialize_i32(v))
+        Ok(self.0.serialize_i32(v))
     }
 
     fn visit_i64<E>(self, v: i64) -> Result<Self::Value, E>
         where E: de::Error
     {
-        try_serializer!(self.0.serialize_i64(v))
+        Ok(self.0.serialize_i64(v))
     }
 
     fn visit_u8<E>(self, v: u8) -> Result<Self::Value, E>
         where E: de::Error
     {
-        try_serializer!(self.0.serialize_u8(v))
+        Ok(self.0.serialize_u8(v))
     }
 
     fn visit_u16<E>(self, v: u16) -> Result<Self::Value, E>
         where E: de::Error
     {
-        try_serializer!(self.0.serialize_u16(v))
+        Ok(self.0.serialize_u16(v))
     }
 
     fn visit_u32<E>(self, v: u32) -> Result<Self::Value, E>
         where E: de::Error
     {
-        try_serializer!(self.0.serialize_u32(v))
+        Ok(self.0.serialize_u32(v))
     }
 
     fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
         where E: de::Error
     {
-        try_serializer!(self.0.serialize_u64(v))
+        Ok(self.0.serialize_u64(v))
     }
 
     serde_if_integer128! {
         fn visit_i128<E>(self, v: i128) -> Result<Self::Value, E>
             where E: de::Error
         {
-            try_serializer!(self.0.serialize_i128(v))
+            Ok(self.0.serialize_i128(v))
         }
 
         fn visit_u128<E>(self, v: u128) -> Result<Self::Value, E>
             where E: de::Error
         {
-            try_serializer!(self.0.serialize_u128(v))
+            Ok(self.0.serialize_u128(v))
         }
     }
 
     fn visit_f32<E>(self, v: f32) -> Result<Self::Value, E>
         where E: de::Error
     {
-        try_serializer!(self.0.serialize_f32(v))
+        Ok(self.0.serialize_f32(v))
     }
 
     fn visit_f64<E>(self, v: f64) -> Result<Self::Value, E>
         where E: de::Error
     {
-        try_serializer!(self.0.serialize_f64(v))
+        Ok(self.0.serialize_f64(v))
     }
 
     fn visit_char<E>(self, v: char) -> Result<Self::Value, E>
         where E: de::Error
     {
-        try_serializer!(self.0.serialize_char(v))
+        Ok(self.0.serialize_char(v))
     }
 
     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
         where E: de::Error
     {
-        try_serializer!(self.0.serialize_str(v))
+        Ok(self.0.serialize_str(v))
     }
 
     fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
         where E: de::Error
     {
-        try_serializer!(self.0.serialize_str(&v))
+        Ok(self.0.serialize_str(&v))
     }
 
     fn visit_unit<E>(self) -> Result<Self::Value, E>
         where E: de::Error
     {
-        try_serializer!(self.0.serialize_unit())
+        Ok(self.0.serialize_unit())
     }
 
     fn visit_none<E>(self) -> Result<Self::Value, E>
         where E: de::Error
     {
-        try_serializer!(self.0.serialize_none())
+        Ok(self.0.serialize_none())
     }
 
     fn visit_some<D>(self, d: D) -> Result<Self::Value, D::Error>
         where D: de::Deserializer<'de>
     {
-        with_transcoder!(d, |tr| self.0.serialize_some(&tr))
+        with_transcoder(d, |tr| self.0.serialize_some(tr))
     }
 
     fn visit_newtype_struct<D>(self, d: D) -> Result<Self::Value, D::Error>
         where D: de::Deserializer<'de>
     {
-        with_transcoder!(d, |tr| self.0.serialize_newtype_struct("<unknown>", &tr))
+        with_transcoder(d, |tr| self.0.serialize_newtype_struct("<unknown>", tr))
     }
 
     fn visit_seq<V>(self, mut v: V) -> Result<Self::Value, V::Error>
@@ -319,9 +308,11 @@ impl<'de, S> de::Visitor<'de> for Visitor<S>
             Err(ser_err) => return Ok(Err(ser_err)),
         };
         while let Some(result) = v.next_element_seed(SeqSeed(&mut s))? {
-            let _: Result<Result<(), S::Error>, V::Error> = try_serializer!(result);
+            if let Err(ser_err) = result {
+                return Ok(Err(ser_err));
+            }
         }
-        try_serializer!(s.end())
+        Ok(s.end())
     }
 
     fn visit_map<V>(self, mut v: V) -> Result<Self::Value, V::Error>
@@ -332,23 +323,27 @@ impl<'de, S> de::Visitor<'de> for Visitor<S>
             Err(ser_err) => return Ok(Err(ser_err)),
         };
         while let Some(result) = v.next_key_seed(KeySeed(&mut s))? {
-            let _: Result<Result<(), S::Error>, V::Error> = try_serializer!(result);
+            if let Err(ser_err) = result {
+                return Ok(Err(ser_err));
+            }
             let result = v.next_value_seed(ValueSeed(&mut s))?;
-            let _: Result<Result<(), S::Error>, V::Error> = try_serializer!(result);
+            if let Err(ser_err) = result {
+                return Ok(Err(ser_err));
+            }
         }
-        try_serializer!(s.end())
+        Ok(s.end())
     }
 
     fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E>
         where E: de::Error
     {
-        try_serializer!(self.0.serialize_bytes(v))
+        Ok(self.0.serialize_bytes(v))
     }
 
     fn visit_byte_buf<E>(self, v: Vec<u8>) -> Result<Self::Value, E>
         where E: de::Error
     {
-        try_serializer!(self.0.serialize_bytes(&v))
+        Ok(self.0.serialize_bytes(&v))
     }
 }
 
@@ -362,7 +357,7 @@ impl<'de, 'a, S> de::DeserializeSeed<'de> for SeqSeed<'a, S>
     fn deserialize<D>(self, d: D) -> Result<Self::Value, D::Error>
         where D: de::Deserializer<'de>
     {
-        with_transcoder!(d, |tr| self.0.serialize_element(&tr))
+        with_transcoder(d, |tr| self.0.serialize_element(tr))
     }
 }
 
@@ -376,7 +371,7 @@ impl<'de, 'a, S> de::DeserializeSeed<'de> for KeySeed<'a, S>
     fn deserialize<D>(self, d: D) -> Result<Self::Value, D::Error>
         where D: de::Deserializer<'de>
     {
-        with_transcoder!(d, |tr| self.0.serialize_key(&tr))
+        with_transcoder(d, |tr| self.0.serialize_key(tr))
     }
 }
 
@@ -390,6 +385,6 @@ impl<'de, 'a, S> de::DeserializeSeed<'de> for ValueSeed<'a, S>
     fn deserialize<D>(self, d: D) -> Result<Self::Value, D::Error>
         where D: de::Deserializer<'de>
     {
-        with_transcoder!(d, |tr| self.0.serialize_value(&tr))
+        with_transcoder(d, |tr| self.0.serialize_value(tr))
     }
 }
