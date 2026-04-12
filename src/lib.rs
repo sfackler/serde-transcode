@@ -37,7 +37,7 @@
 extern crate serde;
 
 use serde::de;
-use serde::ser::{self, Serialize, SerializeSeq, SerializeMap};
+use serde::ser::{self, Serialize, SerializeSeq, SerializeMap, Error};
 use std::cell::Cell;
 use std::fmt;
 
@@ -81,7 +81,7 @@ impl<'de, D> ser::Serialize for Transcoder<D>
     {
         self.0
             .take()
-            .expect("Transcoder may only be serialized once")
+            .ok_or_else(|| S::Error::custom("Transcoder may only be serialized once"))?
             .deserialize_any(Visitor(s))
             .map_err(d2s)
     }
