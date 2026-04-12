@@ -38,7 +38,7 @@ extern crate serde;
 
 use serde::de;
 use serde::ser::{self, Serialize, SerializeSeq, SerializeMap, Error};
-use std::cell::RefCell;
+use std::cell::Cell;
 use std::fmt;
 
 #[cfg(test)]
@@ -62,14 +62,14 @@ pub fn transcode<'de, D, S>(d: D, s: S) -> Result<S::Ok, S::Error>
 /// Unlike traditional serializable types, `Transcoder`'s `Serialize`
 /// implementation is *not* idempotent, as it advances the state of its
 /// internal `Deserializer`. It should only ever be serialized once.
-pub struct Transcoder<D>(RefCell<Option<D>>);
+pub struct Transcoder<D>(Cell<Option<D>>);
 
 impl<'de, D> Transcoder<D>
     where D: de::Deserializer<'de>
 {
     /// Constructs a new `Transcoder`.
     pub fn new(d: D) -> Transcoder<D> {
-        Transcoder(RefCell::new(Some(d)))
+        Transcoder(Cell::new(Some(d)))
     }
 }
 
@@ -80,7 +80,6 @@ impl<'de, D> ser::Serialize for Transcoder<D>
         where S: ser::Serializer
     {
         self.0
-            .borrow_mut()
             .take()
             .ok_or_else(|| S::Error::custom("Transcoder may only be serialized once"))?
             .deserialize_any(Visitor(s))
